@@ -1,27 +1,28 @@
 ﻿module Board 
-let private swap (x1, y1) (x2, y2) (array: _[,]) = 
+
+let swap (x1, y1) (x2, y2) (array: _[,]) = 
     let tmp = array.[x1, y1]
     array.[x1, y1] <- array.[x2, y2]
     array.[x2, y2] <- tmp
     array
 
 let rotateCC (board: Board) : Board = 
-    let transpose (board: Board) : Board = 
+    let transpose (Board board) : Board = 
         for x = 0 to board.GetLength(0) - 1 do
             for y = 0 to x do
                 swap (x, y) (y, x) board |> ignore
-        board
+        Board board
 
-    let flip (board: Board) : Board =
+    let flip (Board board) : Board =
         let nRow = board.GetLength(0)
         for x = 0 to board.GetLength(0) - 1 do
             for y = 0 to board.GetLength(1) / 2 - 1 do
                 swap (x, y) (x, nRow - 1 - y) board |> ignore
-        board
+        Board board
 
     board |> transpose |> flip
 
-let collapseRowRight (board: Board) (iRow: int): bool =
+let collapseRowRight (Board board) (iRow: int): bool =
     (* Rules: 
         1. 0s don't take slots
         2. two same values collapse into 1 slot
@@ -58,14 +59,14 @@ let collapseRowRight (board: Board) (iRow: int): bool =
 
     hasUpdated
     
-let getVacancy (board: Board) : (int * Board) =
+let getVacancy (Board board) : (int * Board) =
     let mutable vacancy = 0
     for x = 0 to board.GetLength(0) - 1 do
         for y = 0 to board.GetLength(1) - 1 do
             if board.[x, y] = 0 then vacancy <- vacancy + 1
-    (vacancy, board)
+    (vacancy, Board board)
 
-let private sprout (vacancy: int) (board: Board) : int * Board = 
+let sprout (vacancy: int) (Board board) : int * Board = 
     let mutable slots = vacancy
     assert (slots > 0) // The game should be over if there's no vacancy
 
@@ -83,13 +84,13 @@ let private sprout (vacancy: int) (board: Board) : int * Board =
                 elif pos > 0 then pos <- pos - 1
 
     assert (sprouted = true)
-    slots - 1, board
+    slots - 1, Board board
 
-let private collapseRight (board: Board) : Board * bool =
+let collapseRight (Board board) : Board * bool =
     seq { 0 .. board.GetLength(0) - 1 } 
-    |> Seq.filter (collapseRowRight board)
+    |> Seq.filter (collapseRowRight (Board board))
     |> Seq.length
-    |> function 0 -> board, false | _ -> board, true
+    |> function 0 -> Board board, false | _ -> Board board, true
 
 let collapse (board: Board) (direction: Direction) : int * Board * bool = 
 
@@ -114,4 +115,4 @@ let collapse (board: Board) (direction: Direction) : int * Board * bool =
     | false -> vacancy, board, hasUpdated
 
 let create (size: int) : Board =
-    Array2D.zeroCreate size size |> sprout (size * size) |> snd
+    Array2D.zeroCreate size size |> Board |> sprout (size * size) |> snd

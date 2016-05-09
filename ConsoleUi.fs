@@ -19,7 +19,7 @@ let private printNum num =
     printf "%6d" num
     Console.ResetColor ()
 
-let print (board: Board) : Board =
+let print (Board board) : Board =
     Console.Clear ()
     let height = board.GetLength 0
     let width = board.GetLength 1
@@ -32,4 +32,4 @@ let print (board: Board) : Board =
         | (x, y) -> printNum board.[x, y])
 
     printfn ""
-    board
+    Board board

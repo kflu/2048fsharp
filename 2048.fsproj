@@ -49,6 +49,7 @@
   <ItemGroup>
     <Compile Include="AssemblyInfo.fs" />
     <Compile Include="Types.fs" />
+    <Compile Include="Board.fsi" />
     <Compile Include="Board.fs" />
     <Compile Include="ConsoleUi.fs" />
     <Compile Include="Program.fs" />

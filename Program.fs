@@ -25,9 +25,9 @@ let main argv =
 
     let isGameOver: (int * Board * bool -> bool) = 
         function
-        | (0, board, _) -> 
+        | (0, Board board, _) -> 
             [Left; Up; Right; Down]
-            |> List.map (Board.collapse (Array2D.copy board))
+            |> List.map (board |> Array2D.copy |> Board |> Board.collapse)
             |> List.forall (fun (_, _, hasUpdated) -> not hasUpdated)
         | _ -> false
 

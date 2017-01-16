@@ -1,5 +1,7 @@
 ﻿module ConsoleUi
 open System
+open Game
+
 let private mapColor : int -> ConsoleColor = function
     | 0 -> ConsoleColor.DarkGray 
     | 2 -> ConsoleColor.Cyan 
@@ -19,10 +21,10 @@ let private printNum num =
     printf "%6d" num
     Console.ResetColor ()
 
-let print (Board board) : Board =
+let print (board) : Board =
     Console.Clear ()
-    let height = board.GetLength 0
-    let width = board.GetLength 1
+    let height = len1 board
+    let width = len2 board
 
     seq { for x in 0 .. height - 1 do
             for y in 0 .. width - 1 do
@@ -32,4 +34,4 @@ let print (Board board) : Board =
         | (x, y) -> printNum board.[x, y])
 
     printfn ""
-    Board board
+    board

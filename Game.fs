@@ -1,28 +1,33 @@
-﻿module Board 
+﻿module Game
 
+type Board = int [,]
+type Direction = Up | Left | Down | Right
 let swap (x1, y1) (x2, y2) (array: _[,]) = 
     let tmp = array.[x1, y1]
     array.[x1, y1] <- array.[x2, y2]
     array.[x2, y2] <- tmp
     array
 
-let rotateCC (board: Board) : Board = 
-    let transpose (Board board) : Board = 
-        for x = 0 to board.GetLength(0) - 1 do
+let len1 = Array2D.length1
+let len2 = Array2D.length2
+
+let rotateCC board = 
+    let transpose board = 
+        for x = 0 to len2 board - 1 do
             for y = 0 to x do
                 swap (x, y) (y, x) board |> ignore
-        Board board
+        board
 
-    let flip (Board board) : Board =
-        let nRow = board.GetLength(0)
-        for x = 0 to board.GetLength(0) - 1 do
-            for y = 0 to board.GetLength(1) / 2 - 1 do
+    let flip board =
+        let nRow, nCol = len1 board, len2 board
+        for x = 0 to nRow - 1 do
+            for y = 0 to nCol / 2 - 1 do
                 swap (x, y) (x, nRow - 1 - y) board |> ignore
-        Board board
+        board
 
     board |> transpose |> flip
 
-let collapseRowRight (Board board) (iRow: int): bool =
+let collapseRowRight (board) (iRow: int) =
     (* Rules: 
         1. 0s don't take slots
         2. two same values collapse into 1 slot
@@ -30,8 +35,7 @@ let collapseRowRight (Board board) (iRow: int): bool =
 
         TODO: this could also be written in a recursive way
         *)
-    let N = board.GetLength(0)
-    let mutable cur = N - 1
+    let mutable cur = len1 board - 1
     let mutable peeker = cur
     let mutable hasUpdated = false
 
@@ -57,23 +61,24 @@ let collapseRowRight (Board board) (iRow: int): bool =
             if cur - 1 <> peeker then hasUpdated <- true
             cur <- cur - 1
 
-    hasUpdated
+    board
     
-let getVacancy (Board board) : (int * Board) =
-    let mutable vacancy = 0
-    for x = 0 to board.GetLength(0) - 1 do
-        for y = 0 to board.GetLength(1) - 1 do
-            if board.[x, y] = 0 then vacancy <- vacancy + 1
-    (vacancy, Board board)
+let getVacancy (board) =
+    seq {
+        for x in 0 .. len1 board - 1 do
+        for y in 0 .. len2 board - 1 -> board.[x,y]
+    }
+    |> Seq.map (function | 0 -> 1 | _ -> 0)
+    |> Seq.sum
 
-let sprout (vacancy: int) (Board board) : int * Board = 
-    let mutable slots = vacancy
+let sprout (vacancy: int) (board) = 
+    let slots = vacancy
     assert (slots > 0) // The game should be over if there's no vacancy
 
     let mutable pos = System.Random().Next slots
     let mutable sprouted = false
-    for x = 0 to board.GetLength(0) - 1 do
-        for y = 0 to board.GetLength(1) - 1 do
+    for x = 0 to len1 board - 1 do
+        for y = 0 to len2 board - 1 do
             if board.[x, y] = 0 then do
                 if pos = 0 then do 
                     // FIXME: I want to break after this is met. F# doesn't have break
@@ -83,36 +88,44 @@ let sprout (vacancy: int) (Board board) : int * Board =
                     pos <- pos - 1
                 elif pos > 0 then pos <- pos - 1
 
-    assert (sprouted = true)
-    slots - 1, Board board
+    assert sprouted
+    board
 
-let collapseRight (Board board) : Board * bool =
-    seq { 0 .. board.GetLength(0) - 1 } 
-    |> Seq.filter (collapseRowRight (Board board))
-    |> Seq.length
-    |> function 0 -> Board board, false | _ -> Board board, true
+let collapseRight (board) =
+    seq { 0 .. len1 board - 1 } 
+    |> Seq.iter (collapseRowRight board >> ignore)
+    board
 
-let collapse (board: Board) (direction: Direction) : int * Board * bool = 
 
-    let mutable hasUpdated = false
-    let collapseRight board = 
-        collapseRight board
-        |> function
-            | (_, true) -> hasUpdated <- true
-            | _ -> ()
-        board
+let equals (b1: int[,]) (b2: int[,]) : bool =
+    (len1 b1 = len1 b2) &&
+    (len2 b1 = len2 b2) &&
+    (Seq.zip (b1 |> Seq.cast) (b2 |> Seq.cast)
+    |> Seq.map (fun (x, y) -> x - y)
+    |> Seq.sum) = 0
 
-    let (vacancy, board) = 
+let collapse board direction = 
+    let old = Array2D.copy board
+    let board =
         match direction with 
         | Right -> board |> collapseRight
         | Down  -> board |> rotateCC |> rotateCC |> rotateCC |> collapseRight |> rotateCC
         | Left  -> board |> rotateCC |> rotateCC |> collapseRight |> rotateCC |> rotateCC
         | Up    -> board |> rotateCC |> collapseRight |> rotateCC |> rotateCC |> rotateCC
-        |> getVacancy
+    
+    match equals old board with
+    | false -> 
+        let vacancy = getVacancy board
+        sprout vacancy board
+    | true -> board
 
-    match hasUpdated with 
-    | true -> sprout vacancy board |> function (x, y) -> x, y, hasUpdated
-    | false -> vacancy, board, hasUpdated
+let create (size: int) =
+    Array2D.zeroCreate size size |> sprout (size * size)
 
-let create (size: int) : Board =
-    Array2D.zeroCreate size size |> Board |> sprout (size * size) |> snd
+let isGameOver (board) =
+    match getVacancy (board) with
+    | 0 -> 
+        [Left; Up; Right; Down]
+        |> List.map (board |> Array2D.copy |> collapse)
+        |> List.forall (equals board)
+    | _ -> false

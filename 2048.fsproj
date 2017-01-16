@@ -47,10 +47,7 @@
     <Reference Include="System.Numerics" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="AssemblyInfo.fs" />
-    <Compile Include="Types.fs" />
-    <Compile Include="Board.fsi" />
-    <Compile Include="Board.fs" />
+    <Compile Include="Game.fs" />
     <Compile Include="ConsoleUi.fs" />
     <Compile Include="Program.fs" />
     <None Include="App.config" />
